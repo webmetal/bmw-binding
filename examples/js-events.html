@@ -29,17 +29,13 @@
         property1: "Hello World"
     });
 
+    // viewModel.when("property1 == 'a'", () => alert("woot!"));
+
     viewModel.on("property1", (newValue, oldValue) => console.log(`${oldValue} -> ${newValue}`));
-    viewModel.when("property1 == 'a'", () => alert("woot!"));
+    viewModel.on("data.firstName", (newValue, oldValue) => console.log(`${oldValue} -> ${newValue}`));
 
     viewModel.property1 = "Test";
-    viewModel.property1 = "Test2";
-    viewModel.property1 = "Test3";
+    //viewModel.data.firstName = "Johan";
 
     cleanObserved(viewModel);
-
-    viewModel.property1 = "Test2";
-    viewModel.property1 = "Test3";
-    viewModel.property1 = "Test4";
-    viewModel.property1 = "Test5";
 </script>
