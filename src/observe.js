@@ -1,4 +1,4 @@
-const muteProperties = ["__events", "__mute"];
+const muteProperties = ["on", "when"];
 
 function observe(target) {
     if (target || !target) {
@@ -10,22 +10,21 @@ function observe(target) {
             set: (obj, prop, value) => {
                 if (Reflect.get(obj, "__mute") == true) return true;
 
-                if (muteProperties.indexOf(prop) != -1) {
+                if (prop.indexOf("__") != -1 || muteProperties.indexOf(prop) != -1) {
                     return Reflect.set(obj, prop, value);
                 }
 
-                ensureOldValues(target);
+                ensureProperty(target, "__oldValues", () => Object.create({}));
 
                 const currentValue = Reflect.get(obj, prop);
-                Reflect.set(obj._oldValues, prop, currentValue);
+                Reflect.set(obj.__oldValues, prop, currentValue);
                 Reflect.set(obj, prop, value);
+
+                notifyPropertyChanged(obj, prop);
 
                 return true;
             }
         });
-
-        Reflect.set(proxy, "__props", new Map());
-        Reflect.set(proxy,"__events", new Map());
 
         proxy.on = on.bind(proxy);
         proxy.when = when.bind(proxy);
@@ -40,35 +39,57 @@ function cleanObserved(target) {
     if (target.isProxy != true) return;
     Reflect.set(target, "__mute", true);
 
-    for (let value of target.__props.values()) {
-        value.length = 0;
-    }
-
-    for (let value of target.__events.values()) {
-        value.length = 0;
-    }
+    clearArrayValues(target, "__props");
+    clearArrayValues(target, "__events");
 
     target.on = null;
     target.when = null;
 }
 
-function ensureOldValues(target) {
-    if (target._oldValues == null)
-    {
-        target._oldValues = {};
-    }
-}
-
 function on(property, callback) {
-    const events = this.__props.get(property) || [];
-    events.push(callback);
-    this.__props.set(property, events);
+    registerTrigger(this,"__props", property, callback);
 }
 
 function when(event, callback) {
-    const events = this.__events.get(event) || [];
+    registerTrigger(this,"__events", event, callback);
+}
+
+function registerTrigger(target, collectionName, key, callback) {
+    ensureProperty(target, collectionName, () => new Map());
+    const events = target[collectionName].get(key) || [];
     events.push(callback);
-    this.__events.set(event, events);
+    target[collectionName].set(key, events);
+}
+
+function ensureProperty(target, prop, createCallback) {
+    if (Reflect.get(target, prop) == null) {
+        Reflect.set(target, prop, createCallback());
+    }
+}
+
+function notifyPropertyChanged(target, property) {
+    const value = Reflect.get(target, property);
+    const oldValue = Reflect.get(target.__oldValues, property);
+
+    target.__props && performCallbacks(target.__props.get(property) || [], value, oldValue);
+    target.__events && performCallbacks(target.__events.get(property) || [], value, oldValue);
+}
+
+function performCallbacks(functions, value, oldValue) {
+    for (let fn of functions) {
+        const handler = setTimeout(() => {
+            fn(value, oldValue);
+            clearTimeout(handler);
+        }, 0);
+    }
+}
+
+function clearArrayValues(target, property) {
+    if (target[property]) {
+        for (let value of target[property].values()) {
+            value.length = 0;
+        }
+    }
 }
 
 export {
