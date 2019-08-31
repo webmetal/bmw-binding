@@ -1,0 +1,12 @@
+{
+  "name": "bmw-binding",
+  "version": "1.0.0",
+  "description": "bare metal web binding engine",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Johan Rabie",
+  "license": "ISC"
+}

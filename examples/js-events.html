@@ -1,0 +1,44 @@
+<h2>Bare metal web binding engine - javascript events</h2>
+
+<h3>on</h3>
+<p>
+    When property1 changes perform this callback.
+</p>
+
+<pre>
+    model.on("property1", (newValue, oldValue) => console.log(`${oldValue} -> ${newValue}`));
+</pre>
+
+<h3>when</h3>
+<p>
+    When this expression passes, perform this callback.
+</p>
+
+<pre>
+    model.when("property1 == 'a'", () => alert("woot!"));
+</pre>
+
+<hr />
+<label for="property1">Property 1</label>
+<input id="property1" value.bind>
+
+<script type="module">
+    import {observe, cleanObserved} from "./../src/observe.js";
+
+    const viewModel = observe({
+        property1: "Hello World"
+    });
+
+    viewModel.on("property1", (newValue, oldValue) => console.log(`${oldValue} -> ${newValue}`));
+    viewModel.on("property1", () => console.log('second fn'));
+    viewModel.when("property1 == 'a'", () => alert("woot!"));
+
+    viewModel.property1 = "Test";
+
+    cleanObserved(viewModel);
+
+    viewModel.property1 = "Test2";
+    viewModel.property1 = "Test3";
+    viewModel.property1 = "Test4";
+    viewModel.property1 = "Test5";
+</script>
